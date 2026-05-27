@@ -1,4 +1,5 @@
 import os
+import time
 import requests
 from bs4 import BeautifulSoup
 from tenacity import retry, stop_after_attempt, wait_fixed
@@ -16,7 +17,7 @@ TELEGRAM_CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
 
 LOGIN_URL = "https://ava.ead.ifsertaope.edu.br/login/index.php?loginredirect=1"
 
-disciplinas = [921, 920, 919, 918, 917]
+disciplinas = [909, 921,  919, 918, 917, 914]
 
 # ==========================================
 # TELEGRAM
@@ -37,7 +38,7 @@ async def enviar_telegram(mensagem):
 
 @retry(
     stop=stop_after_attempt(3),
-    wait=wait_fixed(10)
+    wait=wait_fixed(120)
 )
 def acessar_url(sessao, url):
 
@@ -52,33 +53,133 @@ def acessar_url(sessao, url):
 # LOGIN
 # ==========================================
 
-
-def fazer_login():
+async def fazer_login():
 
     sessao = requests.Session()
 
-    # pega token/cookies iniciais
-    resposta = sessao.get(LOGIN_URL)
+    try:
 
-    soup = BeautifulSoup(resposta.text, "html.parser")
+        # ----------------------------------
+        # ACESSO INICIAL
+        # ----------------------------------
 
-    logintoken = soup.find("input", {"name": "logintoken"})
+        resposta = sessao.get(
+            LOGIN_URL,
+            timeout=30
+        )
 
-    payload = {
-        "username": USUARIO,
-        "password": SENHA
-    }
+        resposta.raise_for_status()
 
-    if logintoken:
-        payload["logintoken"] = logintoken["value"]
+        # ----------------------------------
+        # PROCESSA HTML
+        # ----------------------------------
 
-    login = sessao.post(LOGIN_URL, data=payload)
+        soup = BeautifulSoup(
+            resposta.text,
+            "html.parser"
+        )
 
-    if "loginerrormessage" in login.text:
-        raise Exception("Falha no login")
+        logintoken = soup.find(
+            "input",
+            {"name": "logintoken"}
+        )
 
-    return sessao
+        payload = {
+            "username": USUARIO,
+            "password": SENHA
+        }
 
+        if logintoken:
+            payload["logintoken"] = logintoken["value"]
+
+        # ----------------------------------
+        # ENVIA LOGIN
+        # ----------------------------------
+
+        login = sessao.post(
+            LOGIN_URL,
+            data=payload,
+            timeout=30
+        )
+
+        login.raise_for_status()
+
+        # ----------------------------------
+        # VERIFICA ERRO DE LOGIN
+        # ----------------------------------
+
+        if "loginerrormessage" in login.text.lower():
+
+            mensagem = (
+                "🚨 ERRO NO LOGIN\n\n"
+                "Usuário ou senha inválidos."
+            )
+
+            await enviar_telegram(mensagem)
+
+            raise Exception(mensagem)
+
+        return sessao
+
+    # --------------------------------------
+    # ERROS HTTP
+    # --------------------------------------
+
+    except requests.exceptions.HTTPError as erro_http:
+
+        mensagem = (
+            "🚨 ERRO HTTP NO LOGIN\n\n"
+            f"{erro_http}"
+        )
+
+        await enviar_telegram(mensagem)
+
+        raise Exception(mensagem)
+
+    # --------------------------------------
+    # ERRO DE CONEXÃO
+    # --------------------------------------
+
+    except requests.exceptions.ConnectionError:
+
+        mensagem = (
+            "🚨 FALHA DE CONEXÃO\n\n"
+            "Não foi possível conectar ao AVA."
+        )
+
+        await enviar_telegram(mensagem)
+
+        raise Exception(mensagem)
+
+    # --------------------------------------
+    # TIMEOUT
+    # --------------------------------------
+
+    except requests.exceptions.Timeout:
+
+        mensagem = (
+            "🚨 TIMEOUT NO LOGIN\n\n"
+            "O AVA demorou para responder."
+        )
+
+        await enviar_telegram(mensagem)
+
+        raise Exception(mensagem)
+
+    # --------------------------------------
+    # OUTROS ERROS
+    # --------------------------------------
+
+    except Exception as erro:
+
+        mensagem = (
+            "🚨 ERRO INESPERADO NO LOGIN\n\n"
+            f"{str(erro)}"
+        )
+
+        await enviar_telegram(mensagem)
+
+        raise Exception(mensagem)
 # ==========================================
 # EXECUÇÃO PRINCIPAL
 # ==========================================
@@ -90,7 +191,7 @@ async def main():
 
     try:
 
-        sessao = fazer_login()
+        sessao = await fazer_login()
 
         relatorio.append("✅ Login realizado com sucesso.")
 
@@ -109,7 +210,7 @@ async def main():
             for url in urls:
 
                 try:
-
+                    time.sleep(3)
                     acessar_url(sessao, url)
 
                     relatorio.append(f"✔ {url}")
