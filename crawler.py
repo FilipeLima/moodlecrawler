@@ -17,7 +17,7 @@ TELEGRAM_CHAT_ID = os.environ["TELEGRAM_CHAT_ID"]
 
 LOGIN_URL = "https://ava.ead.ifsertaope.edu.br/login/index.php?loginredirect=1"
 
-disciplinas = [909, 921,  919, 918, 917, 914]
+disciplinas = [999,1001,1003]
 
 # ==========================================
 # TELEGRAM
