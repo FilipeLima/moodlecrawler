@@ -27,11 +27,11 @@ LOGIN_URL = (
 # Altere posteriormente os IDs das disciplinas e dos grupos.
 # Formato: ID_DA_DISCIPLINA: ID_DO_GRUPO
 DISCIPLINAS = {
-    921: 3168,
-    920: 3168,
-    919: 3168,
-    918: 3168,
-    917: 3168,
+    1003: 3685, #Estruturas Algébricas
+    1001: 3673, #Cálculo 2
+    999: 3657, #Prática do Ensino Médio 2
+    #918: 3168,
+    #917: 3168,
 }
 
 DELAY_ENTRE_ACESSOS = 5
