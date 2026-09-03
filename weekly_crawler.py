@@ -585,8 +585,6 @@ def main():
             f"O crawler terminou com {falhas} disciplina(s) "
             "com erro."
         )
-```
-
 
 
 if __name__ == "__main__":
