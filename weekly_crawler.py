@@ -88,7 +88,36 @@ def enviar_arquivo_telegram(
 
     resposta.raise_for_status()
 
+def enviar_xlsx_telegram(df, nome_arquivo):
+    buffer = io.BytesIO()
 
+    with pd.ExcelWriter(buffer, engine="openpyxl") as writer:
+        df.to_excel(writer, index=True, sheet_name="Tabela")
+
+    buffer.seek(0)
+
+    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendDocument"
+
+    arquivos = {
+        "document": (
+            nome_arquivo,
+            buffer,
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
+    }
+
+    dados = {
+        "chat_id": TELEGRAM_CHAT_ID
+    }
+
+    response = requests.post(
+        url,
+        data=dados,
+        files=arquivos,
+        timeout=30
+    )
+
+    response.raise_for_status()
 # ============================================================
 # ACESSO HTTP COM RETRY
 # ============================================================
@@ -485,16 +514,18 @@ def main():
 
             arquivo = io.BytesIO()
 
-            tabela.to_csv(
+            tabela.to_excel(
                 arquivo,
-                encoding="utf-8-sig",
+                index=True,
+                sheet_name="Tabela",
+                engine="openpyxl",
             )
 
             conteudo = arquivo.getvalue()
 
             nome_arquivo = (
                 f"disciplina_{disciplina}_"
-                "analise_semanal.csv"
+                "analise_semanal.xlsx"
             )
 
             legenda = (
@@ -554,6 +585,8 @@ def main():
             f"O crawler terminou com {falhas} disciplina(s) "
             "com erro."
         )
+```
+
 
 
 if __name__ == "__main__":
