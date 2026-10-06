@@ -30,8 +30,8 @@ DISCIPLINAS = {
     1003: 3685, #Estruturas Algébricas
     1001: 3673, #Cálculo 2
     999: 3657, #Prática do Ensino Médio 2
-    #918: 3168,
-    #917: 3168,
+    1002: 3679,
+    1004: 3691,
 }
 
 DELAY_ENTRE_ACESSOS = 5
